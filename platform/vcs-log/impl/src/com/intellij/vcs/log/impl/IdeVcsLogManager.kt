@@ -3,6 +3,7 @@ package com.intellij.vcs.log.impl
 
 import com.intellij.openapi.application.EdtImmediate
 import com.intellij.openapi.application.UiImmediate
+import com.intellij.openapi.components.service
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
@@ -34,7 +35,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.launch
 import org.jetbrains.annotations.ApiStatus.Internal
-import java.util.UUID
 
 internal class IdeVcsLogManager(
   project: Project,
@@ -49,6 +49,8 @@ internal class IdeVcsLogManager(
 
   private lateinit var mainUiCs: CoroutineScope
 
+  private val showLogInEditorWindow = service<VcsLogApplicationSettings>()[CommonUiProperties.SHOW_IN_EDITOR]
+
   private val mainUiState = MutableStateFlow<MainVcsLogUi?>(null)
   val mainUi: MainVcsLogUi? get() = mainUiState.value
 
@@ -59,10 +61,16 @@ internal class IdeVcsLogManager(
     // need EDT because of immediate toolbar update
     mainUiCs.launch(Dispatchers.EdtImmediate) {
       mainUiHolderState.collect { holder ->
-        val file = VcsLogVirtualFileSystem.Holder.getInstance().
-        createVcsLogFile(project, "", null)
-        val editor = FileEditorManager.getInstance(project).openFile(file, false, true)
-        val ui = VcsLogEditorUtil.findVcsLogUi(editor,MainVcsLogUi::class.java)
+        val ui = if (showLogInEditorWindow) {
+          val file = VcsLogVirtualFileSystem.Holder.getInstance().
+          createVcsLogFile(project, "", null)
+          val editors = FileEditorManager.getInstance(project).openFile(file, false, true)
+          VcsLogEditorUtil.findVcsLogUi(editors, MainVcsLogUi::class.java)
+        } else if (holder != null) {
+          createLogUi(getMainLogUiFactory(MAIN_LOG_ID, null))
+        } else {
+          null
+        }
         if (holder != null) {
           if (ui != null)
             holder.installMainUi(this@IdeVcsLogManager, ui)
@@ -188,6 +196,15 @@ internal class IdeVcsLogManager(
           it.showCommitSync(hash, root, false)
         }
 
+    if (showLogInEditorWindow) {
+      val editors = FileEditorManager.getInstance(project).allEditors
+      val ui = VcsLogEditorUtil.findVcsLogUis(editors, MainVcsLogUi::class.java).firstNotNullOfOrNull { it.showIfPossible() }
+      if (ui != null) {
+        VcsLogEditorUtil.selectLogUi(project, ui)
+        return ui
+      }
+    }
+
     val selectedContent = contentManager.selectedContent
     val mainContent = VcsLogContentUtil.findMainLog(contentManager)
 
@@ -280,7 +297,8 @@ internal class IdeVcsLogManager(
         }
       }
 
-    val ui = openNewLogTab(VcsLogTabLocation.TOOL_WINDOW, VcsLogFilterObject.EMPTY_COLLECTION)
+    val ui = openNewLogTab(if (showLogInEditorWindow) VcsLogTabLocation.EDITOR else VcsLogTabLocation.TOOL_WINDOW,
+                           VcsLogFilterObject.EMPTY_COLLECTION)
     if (!ui.showCommit(hash, root, false)) return null
 
     toolWindow.activateOrShow(requestFocus)

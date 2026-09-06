@@ -1,13 +1,15 @@
-# <img src="./community-resources/resources/rebased_16@2x.svg"/> Rebased
-
-A git client based on the IntelliJ platform.
-
-Rebased is an open-source remake of the short-lived [jetbrains git client](https://youtrack.jetbrains.com/issue/IJPL-72504/Make-git-client-a-standalone-app#focus=Comments-27-12868395.0-0).
-It's basically just a JetBrains IDE with all the bundled plugins removed except the git integration, with some additional UI tweaks.
+<div align="center">
+  <img src="./community-resources/resources/rebased.svg" width="100" height="100" />  
+  <h1>Rebased</h1>
+  <p>A git client based on the IntelliJ platform.</p>
+</div>
 
 ![](screenshot.png)
 
-## Why?
+## Motivation
+
+Rebased is an open-source remake of the short-lived [jetbrains git client](https://youtrack.jetbrains.com/issue/IJPL-72504/Make-git-client-a-standalone-app#focus=Comments-27-12868395.0-0).
+It's basically just a JetBrains IDE with all the bundled plugins removed except the git integration, with some additional UI tweaks.
 
 See [this youtrack issue](https://youtrack.jetbrains.com/issue/IJPL-72504/Make-git-client-a-standalone-app) for the many reasons people have been requesting this for almost a decade. At the time of writing, it's the #3 most upvoted open issue on YouTrack.
 
@@ -15,13 +17,23 @@ See [this youtrack issue](https://youtrack.jetbrains.com/issue/IJPL-72504/Make-g
 
 ### Linux
 
-Download the appimage from [GitHub releases](https://github.com/DetachHead/rebased/releases).
+We recommend installing the AppImage with with [AppManager](https://github.com/kem-a/AppManager) to install it to your applications menu, and for automatic updates:
 
-We recommend using either [AppManager](https://github.com/kem-a/AppManager) or [Gear Lever](https://github.com/mijorus/gearlever) to install it to your applications menu, and for automatic updates.
+|Architecture|Install via AppManager|Manual Download|
+|-|-|-|
+|x86_64|[Install](https://detachhead.codeberg.page/urlwrapper/?url=appimg://install?url=https://github.com/DetachHead/rebased/releases/latest/download/Rebased-x86_64.AppImage)|[Download](https://github.com/DetachHead/rebased/releases/latest/download/Rebased-x86_64.AppImage)
+|aarch64|[Install](https://detachhead.codeberg.page/urlwrapper/?url=appimg://install?url=https://github.com/DetachHead/rebased/releases/latest/download/Rebased-aarch64.AppImage)|[Download](https://github.com/DetachHead/rebased/releases/latest/download/Rebased-aarch64.AppImage)
+
+Alternatively you can download the `.tar.gz` from [GitHub Releases](https://github.com/DetachHead/rebased/releases)
 
 ### Windows
 
-You can either download the installer `.exe` from [GitHub releases](https://github.com/DetachHead/rebased/releases) or install via winget:
+|Architecture|Installer|Portable `.zip`|
+|-|-|-|
+|x86_64|[Download](https://github.com/DetachHead/rebased/releases/latest/download/rebased.exe)|[Download](https://github.com/DetachHead/rebased/releases/latest/download/rebased.win.zip)|
+|aarch64|[Download](https://github.com/DetachHead/rebased/releases/latest/download/rebased-aarch64.exe)|[Download](https://github.com/DetachHead/rebased/releases/latest/download/rebased-aarch64.win.zip)|
+
+Alternatively you can install via winget:
 
 ```ps1
 winget install detachhead.rebased --source winget
@@ -35,23 +47,34 @@ Install with [homebrew](https://brew.sh/):
 brew install detachhead/tap/rebased
 ```
 
-<details>
-  <summary>Manual installation</summary>
+Alternatively you can download the `.dmg` manually:
 
-  Download the `.dmg` from [GitHub releases](https://github.com/DetachHead/rebased/releases)
+> [!WARNING]
+> 
+> When installing the `.dmg` manually, you may see the following error message after copying `Rebased.app` to your Applications folder:
+> > "Rebased.app" is damaged and can't be opened. You should move it to the Bin.
+> 
+> **This is Apple lying to you.** Nothing is "damaged", it's just not code-signed with an Apple Developer certificate. To fix it, run the following command:
+> ```bash
+> xattr -rd com.apple.quarantine /Applications/Rebased.app
+> ```
 
-  After copying `Rebased.app` to your Applications folder, you may see the following error message:
-  > "Rebased.app" is damaged and can't be opened. You should move it to the Bin.
-
-  **This is Apple lying to you.** Nothing is "damaged", it's just not code-signed with an Apple Developer certificate. To fix it, run the following command:
-  ```bash
-  xattr -rd com.apple.quarantine /Applications/Rebased.app
-  ```
-</details>
+|Architecture|Download|
+|-|-|
+|Apple Silicon (aarch64)|[Download](https://github.com/DetachHead/rebased/releases/latest/download/rebased-aarch64.dmg)|
+|Intel (x86_64)|[Download](https://github.com/DetachHead/rebased/releases/latest/download/rebased.dmg)|
 
 ## Exclusive Features
 
 In addition to all the git-related features from [IntelliJ IDEA Community Edition](https://github.com/jetbrains/intellij-community), Rebased has some additional features which aren't available in any of the official JetBrains IDEs.
+
+### Customizable git log location
+
+By default, the git log in Rebased is located in the main editor window, as the graph is typically the main focus of a git GUI client.
+However, if you prefer it to be in the tool window at the bottom like in JetBrains IDEs, you can disable this behavior:
+
+1. Go to *Settings > Version Control > Log*
+2. Uncheck "Show the log in the editor window"
 
 ### Option to disable the `.idea` directory
 
@@ -79,148 +102,38 @@ One of the goals of Rebased is to prevent users from having to install bloated p
 
 (currently only one language, but feel free to open an [issue](https://github.com/DetachHead/rebased/issues/new/choose) or [PR](https://github.com/DetachHead/rebased/compare) for others)
 
+## Plugins
+
+### Compatibility disclaimer
+
+While installing plugins from the marketplace is supported, note that many of the core components otherwise present in every JetBrains IDE are disabled in Rebased. This means some plugins may not work properly (or at all) if they depend on such components.
+
+If you encounter any problems with a git-related plugin, you may open an issue, but keep in mind:
+
+- issues about language specific-plugins or other plugins that aren't related to git functionality are likely to be considered out-of-scope for Rebased, but will be assessed on a case-by-case basis
+- if fixing an issue with a git-related plugin requires re-enabling bloated IDE features that should otherwise not be required in a git client, it may still be considered out-of-scope
+
+### For plugin developers
+
+If you need to debug your plugin in Rebased, the IntelliJ platform gradle plugin [supports debugging with a local instance of the IDE](https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin.html#dependenciesLocalPlatform). You can configure it to use Rebased.
+
+> [!NOTE]
+> If you're on linux using the AppImage, you'll have to either extract or mount it first. If you're using AppManager, you can click "Extract AppImage". Alternatively you can run `./Rebased.AppImage --appimage-mount` to mount it instead.
+> 
+> Once mounted/extracted, set the `local` path to the `usr` directory inside the AppImage's filesystem, for example:
+> ```kts
+> dependencies {
+>   intellijPlatform {
+>     local("/tmp/.mount_Rebaseccgcph/usr")
+>   }
+> }
+> ```
+
+## Contributing
+
+See [`CONTRIBUTING.md`](./CONTRIBUTING.md)
+
 ## Credits
 
 - https://github.com/obiscr/intellij-community - a previous attempt at creating a JetBrains git client that I cherrypicked some commits from
 - JetBrains (obviously)
-
-## Contributing
-
-> [!NOTE]
-> This section is mostly unchanged from the upstream intellij-community repo, but with a few small tweaks to match the changes I've made to the build process.
-
-### Getting the Source Code
-
-This section will guide you through getting the project sources and help avoid common issues in git config and other steps before opening it in the IDE.
-
-##### Prerequisites
-- [Git](https://git-scm.com/) installed
-- Install [IntelliJ IDEA 2023.2](https://www.jetbrains.com/idea/download) or higher.
-- For **Windows** set these git config to avoid common issues during cloning:
-  ```
-  git config --global core.longpaths true
-  git config --global core.autocrlf input
-  ```
-
-##### Clone Main Repository
-
-Rebased is available from the [GitHub repository](https://github.com/detachhead/rebased). 
-The **master** (_default_) branch contains the source code which is periodically merged with upstream, however Rebased tracks upstream IntelliJ Community releases in [separate release branches](https://github.com/DetachHead/rebased/pulls?q=is%3Apr+label%3A%22release+branch%22). Releases are always published from the latest release branch instead of the master branch.
-
-You can [clone this project](https://www.jetbrains.com/help/idea/manage-projects-hosted-on-github.html#clone-from-GitHub) directly using IntelliJ IDEA. 
-
-Alternatively, follow the steps below in a terminal:
-
-   ```
-   git clone https://github.com/detachhead/rebased.git --recurse-submodules
-   cd rebased
-   ```
-
-> [!TIP]
-> - **For faster download**: If the complete repository history isn't needed, create [shallow clone](https://git-scm.com/docs/git-clone#Documentation/git-clone.txt---depthdepth)
-> To download only the latest revision of the repository,  add `--depth 1` option after `clone`.
-> - Cloning in IntelliJ IDEA also supports creating shallow clone.
-
-> [!NOTE]
-> This project requires additional Android modules from separate Git repositories, which is why `--recurse-submodules` is needed. Ideally these should not be needed since Rebased
-> is not built with the Android plugin, but it seems too tightly integrated with the codebase to be able to easily remove it. So for now I've kept it as a git submodule instead of
-> relying on a script. This way, the project is always pinned to a version of the android repo that works with it.
-
----
-### Building Rebased
-
-These instructions will help you build Rebased from source code, which is based on the IntelliJ community edition.
-IntelliJ IDEA '**2023.2**' or newer is required.
-
-#### Opening the Rebased Source Code in the IDE
-Using the latest IntelliJ IDEA, click '**File | Open**', select the `<IDEA_HOME>` directory.
-If IntelliJ IDEA displays a message about a missing or out-of-date required plugin (e.g. Kotlin),
-[enable, upgrade, or install that plugin](https://www.jetbrains.com/help/idea/managing-plugins.html) and restart IntelliJ IDEA.
-
-
-#### Build Configuration Steps
-1. **JDK Setup**
-
-- Use JetBrains Runtime 21 (without JCEF) to compile
-  - IDE will prompt to download it on the first build
-> [!IMPORTANT]
->
-> JetBrains Runtime **without** JCEF is required. If `jbr-21` SDK points to JCEF version, change it to the non-JCEF version:
-> - Add `idea.is.internal=true` to `idea.properties` and restart the IDE.
-> - Go to '**Project Structure | SDKs**'
-> - Click 'Browse' → 'Download...'
-> - Select version 21 and vendor 'JetBrains Runtime'
-> - To confirm if the JDK is correct, navigate to the SDK page with jbr-21 selected. Search for `jcef`, it should **_NOT_** yield a result.
-
-2. **Maven Configuration** : If the **Maven** plugin is disabled, [add the path variable](https://www.jetbrains.com/help/idea/absolute-path-variables.html) "**MAVEN_REPOSITORY**" pointing to `<USER_HOME>/.m2/repository` directory.
-
-3. **Memory Settings**
-  - Ensure a minimum **8GB** RAM on your computer.
-  - With the minimum RAM, disable "**Compile independent modules in parallel**" in '**Settings | Build, Execution, Deployment | Compiler**'.
-  - With notably higher available RAM, Increase "**User-local heap size**" to `3000`.
-
-
-#### Building the Rebased Application from Source
-
-**To build Rebased from source**, choose '**Build | Build Project**' from the main menu.
-
-**To build installation packages**, run the [installers.cmd](installers.cmd) script in `<IDEA_HOME>` directory. `installers.cmd` will work on both Windows and Unix systems.
-Options to build installers are passed as system properties to `installers.cmd` command.
-You may find the list of available properties in [BuildOptions.kt](platform/build-scripts/src/org/jetbrains/intellij/build/BuildOptions.kt)
-
-Installer build examples:
-```bash
-# Build installers only for current operating system:
-./installers.cmd -Dintellij.build.target.os=current
-```
-```bash
-# Build source code _incrementally_ (do not build what was already built before):
-./installers.cmd -Dintellij.build.incremental.compilation=true
-```
-
-> [!TIP]
-> 
-> The `installers.cmd` is used to run [OpenSourceCommunityInstallersBuildTarget](build/src/OpenSourceCommunityInstallersBuildTarget.kt) from the command line.
-> You can also call it directly from IDEA, using run configuration `Build Rebased Installers (current OS)`.
-
-
-##### Dockerized Build Environment
-To build installation packages inside a Docker container with preinstalled dependencies and tools, run the following command in `<IDEA_HOME>` directory (on Windows, use PowerShell):
-```bash
-docker build . --target intellij_idea --tag intellij_idea_env
-docker run --rm --user "$(id -u)" --volume "${PWD}:/community" intellij_idea_env
-```
-> [!NOTE]
-> 
-> Please remember to specify the `--user "$(id -u)"` argument for the container's user to match the host's user.
-> This prevents issues with permissions for the checked-out repository, the build output, and the mounted Maven cache, if any.
-> 
-To reuse the existing Maven cache from the host system, add the following option to `docker run` command:
-`--volume "$HOME/.m2:/home/ide_builder/.m2"`
-
----
-### Running Rebased
-To run the version of Rebased that was built from source, choose '**Run | Run**' from the main menu. This will use the preconfigured run configuration `Rebased`.
-
-To run tests on the build, apply these settings to the '**Run | Edit Configurations... | Templates | JUnit**' configuration tab:
-* Working dir: `<IDEA_HOME>/bin`
-* VM options:  `-ea`
-
-
-#### Running Rebased in CI/CD environment
-
-To run tests outside of IntelliJ IDEA, run the `tests.cmd` command in `<IDEA_HOME>` directory.`tests.cmd` can be used in both Windows and Unix systems.
-Options to run tests are passed as system properties to `tests.cmd` command.
-You may find the list of available properties in [TestingOptions.kt](platform/build-scripts/src/org/jetbrains/intellij/build/TestingOptions.kt)
-
-```bash
-# Build source code _incrementally_ (do not build what was already built before): `
-./tests.cmd -Dintellij.build.incremental.compilation=true
-```
-```bash
-#Run a specific test: 
-./tests.cmd -Dintellij.build.test.patterns=com.intellij.util.ArrayUtilTest
-```
-
-`tests.cmd` is used just to run [CommunityRunTestsBuildTarget](build/src/CommunityRunTestsBuildTarget.kt) from the command line.
-You can also call it directly from IDEA, see run configuration `tests` for an example.

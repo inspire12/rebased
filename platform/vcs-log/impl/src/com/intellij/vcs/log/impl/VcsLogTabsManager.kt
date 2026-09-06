@@ -47,11 +47,13 @@ internal class VcsLogTabsManager(
     val toolWindowTabs = mutableListOf<String>()
     for ((id, location) in savedTabs) {
       when (location) {
-        VcsLogTabLocation.EDITOR -> collectTabForReopenOrDrop(id, editorTabs::add)
-        VcsLogTabLocation.TOOL_WINDOW -> collectTabForReopenOrDrop(id, toolWindowTabs::add)
+        VcsLogTabLocation.EDITOR -> editorTabs.add(id)
+        VcsLogTabLocation.TOOL_WINDOW -> toolWindowTabs.add(id)
         else -> LOG.warn("Reopening standalone tabs is not supported")
       }
     }
+    closeTabsWithoutFilters(editorTabs)
+    closeTabsWithoutFilters(toolWindowTabs)
 
     if (editorTabs.isNotEmpty()) {
       invokeLater(ModalityState.nonModal()) {
@@ -61,35 +63,49 @@ internal class VcsLogTabsManager(
       }
     }
 
-    //if (toolWindowTabs.isNotEmpty()) {
-    //  futureToolWindow.thenAccept { toolWindow ->
-    //    if (!LOG.assertTrue(!logManager.isDisposed, "Attempting to open tabs on disposed VcsLogManager")) return@thenAccept
-    //    LOG.debug("Reopening toolwindow tabs with ids: $toolWindowTabs")
-    //    toolWindowTabs.forEach { openToolWindowLogTab(toolWindow, it, false, null) }
-    //  }
-    //}
+    if (!uiProperties.shouldShowInEditor()) {
+      if (toolWindowTabs.isNotEmpty()) {
+        futureToolWindow.thenAccept { toolWindow ->
+          if (!LOG.assertTrue(!logManager.isDisposed, "Attempting to open tabs on disposed VcsLogManager")) return@thenAccept
+          LOG.debug("Reopening toolwindow tabs with ids: $toolWindowTabs")
+          toolWindowTabs.forEach { openToolWindowLogTab(toolWindow, it, false, null) }
+        }
+      }
 
-    //ToolWindowManager.getInstance(project).invokeLater {
-    //  if (logManager.isDisposed) return@invokeLater
-    //
-    //  val toolWindow = getToolWindow(project) ?: run {
-    //    LOG.error("Could not find tool window by id ${ChangesViewContentManager.TOOLWINDOW_ID}")
-    //    return@invokeLater
-    //  }
-    //
-    //  if (toolWindow.isVisible) {
-    //    futureToolWindow.complete(toolWindow)
-    //  }
-    //}
+      ToolWindowManager.getInstance(project).invokeLater {
+        if (logManager.isDisposed) return@invokeLater
+
+        val toolWindow = getToolWindow(project) ?: run {
+          LOG.error("Could not find tool window by id ${ChangesViewContentManager.TOOLWINDOW_ID}")
+          return@invokeLater
+        }
+
+        if (toolWindow.isVisible) {
+          futureToolWindow.complete(toolWindow)
+        }
+      }
+    }
   }
 
-  private fun collectTabForReopenOrDrop(tabId: String, collector: (String) -> Unit) {
+  private fun closeTabsWithoutFilters(tabs: MutableList<String>) {
     val shouldRestoreWithoutFilters = Registry.`is`("vcs.log.tabs.restore.without.filters", false)
-    if (shouldRestoreWithoutFilters || uiProperties.checkTabHasFilters(tabId)) {
-      collector(tabId)
-    }
-    else {
-      uiProperties.removeTab(tabId)
+    if (shouldRestoreWithoutFilters) return
+
+    val iter = tabs.iterator()
+    // restore one tab without filters for better UX (don't make the user create a new empty tab themselves)
+    var oneTabPreserved = false
+    while (iter.hasNext()) {
+      val tabId = iter.next()
+      if (uiProperties.checkTabHasFilters(tabId)) {
+        continue
+      }
+      else if (!oneTabPreserved) {
+        oneTabPreserved = true
+      }
+      else {
+        iter.remove()
+        uiProperties.removeTab(tabId)
+      }
     }
   }
 

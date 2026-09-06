@@ -1,13 +1,4 @@
 inputs:
-  os:
-    description: 'linux, windows or mac'
-    required: true
-  arch:
-    description: 'x64 or aarch64'
-    required: true
-  extension:
-    description: 'tar.gz, exe or sit'
-    required: true
   product:
     description: 'a product, available options: intellij_idea, pycharm'
     required: true
@@ -17,30 +8,17 @@ inputs:
 runs:
   using: composite
   steps:
-    # https://mathio28.medium.com/squeezing-disk-space-from-github-actions-runners-an-engineers-guide-d5fbe4443692#ecb6
-    - name: download more disk space
-      shell: bash
-      run: |
-        sudo rm -rf /usr/lib/jvm
-        sudo rm -rf /usr/share/dotnet
-        sudo rm -rf /usr/share/swift
-        sudo rm -rf /usr/local/.ghcup
-        sudo rm -rf /usr/local/julia*
-        sudo rm -rf /usr/local/lib/android
-        sudo rm -rf /usr/local/share/chromium
-        sudo rm -rf /opt/microsoft /opt/google
-        sudo rm -rf /opt/az
-        sudo rm -rf /usr/local/share/powershell
-        sudo rm -rf /opt/hostedtoolcache
-        docker system prune -af || true
-        docker builder prune -af || true
-        df -h
-
+    - uses: ./.github/actions/free_disk_space_and_expand_swap
     - name: Build environment
       shell: bash
+      env:
+        product: ${{inputs.product}}
       # language=bash
-      run: docker build . --target ${{inputs.product}} --tag ${{inputs.product}}
-    - name: Build ${{inputs.arch}}.${{inputs.extension}}
+      run: docker build . --target $product --tag $product
+    - name: Build
       shell: bash
+      env:
+        product: ${{inputs.product}}
+        version: ${{inputs.version}}
       # language=bash
-      run: docker run --rm --user "$(id -u)" --volume "${PWD}:/community" ${{inputs.product}} -Dintellij.build.target.os=${{inputs.os}} -Dintellij.build.target.arch=${{inputs.arch}} -Dbuild.version=${{inputs.version}}
+      run: docker run --rm --user "$(id -u)" --volume "${PWD}:/community" $product -Dbuild.version=$version

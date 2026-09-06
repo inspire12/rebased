@@ -1,10 +1,29 @@
 <idea-plugin visibility="public">
+  <!-- region Generated dependencies - run `Generate Product Layouts` to regenerate -->
   <dependencies>
+    <module name="fleet.rhizomedb"/>
+    <module name="intellij.platform.analysis"/>
+    <module name="intellij.platform.core"/>
+    <module name="intellij.platform.core.impl"/>
+    <module name="intellij.platform.core.ui"/>
+    <module name="intellij.platform.diff"/>
+    <module name="intellij.platform.editor.ui"/>
+    <module name="intellij.platform.ide.core"/>
+    <module name="intellij.platform.ide.impl"/>
+    <module name="intellij.platform.kernel"/>
+    <module name="intellij.platform.lang"/>
+    <module name="intellij.platform.lang.core"/>
+    <module name="intellij.platform.lang.impl"/>
+    <module name="intellij.platform.lvcs"/>
+    <module name="intellij.platform.projectModel"/>
+    <module name="intellij.platform.util.coroutines"/>
+    <module name="intellij.platform.util.ui"/>
     <module name="intellij.platform.vcs.dvcs"/>
-    <module name="intellij.platform.vcs.log.impl"/>
-    <module name="intellij.platform.vcs.impl.shared"/>
     <module name="intellij.platform.vcs.dvcs.impl.shared"/>
+    <module name="intellij.platform.vcs.impl.shared"/>
+    <module name="intellij.platform.vcs.log.impl"/>
   </dependencies>
+  <!-- endregion -->
   <extensionPoints>
     <extensionPoint name="pushSupport"
                     interface="com.intellij.dvcs.push.PushSupport"
@@ -51,7 +70,7 @@
       <add-to-group group-id="VcsToolbarActions" anchor="after" relative-to-action="ChangesView.ToggleCommitUi"/>
       <add-to-group group-id="VcsNavBarToolbarActions" anchor="after" relative-to-action="ChangesView.ToggleCommitUi"/>
       <add-to-group group-id="SegmentedVcsActionsBarGroup" anchor="after" relative-to-action="ChangesView.ToggleCommitUi"/>
-      <add-to-group group-id="MainToolbarVCSGroup" anchor="after" relative-to-action="main.toolbar.git.MergeRebase"/>
+      <add-to-group group-id="MainToolbarVCSGroup" anchor="after" relative-to-action="Vcs.UpdateProject"/>
     </action>
 
     <group id="Vcs.Push.Actions">

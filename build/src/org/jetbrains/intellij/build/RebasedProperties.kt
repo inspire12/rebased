@@ -1,4 +1,4 @@
-// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.intellij.build
 
 import kotlinx.collections.immutable.PersistentList
@@ -16,7 +16,6 @@ import java.nio.file.Path
 
 val MAVEN_ARTIFACTS_ADDITIONAL_MODULES: PersistentList<String> = persistentListOf(
   "intellij.tools.jps.build.standalone",
-  "intellij.devkit.runtimeModuleRepository.jps",
   "intellij.devkit.jps",
   "intellij.idea.community.build.tasks",
   "intellij.platform.debugger.testFramework",
@@ -57,7 +56,9 @@ open class RebasedProperties(private val communityHomeDir: Path) : JetBrainsProd
     useSplash = false
     buildCrossPlatformDistribution = true
     buildSourcesArchive = true
-    runtimeDistribution = JetBrainsRuntimeDistribution.LIGHTWEIGHT
+    runtimeDistribution = JetBrainsRuntimeDistribution.VANILLA
+
+    imagesDirectoryPath = communityHomeDir.resolve("build/idea-community-images")
 
     productLayout.productImplementationModules = listOf(
       "intellij.platform.starter",
@@ -77,8 +78,8 @@ open class RebasedProperties(private val communityHomeDir: Path) : JetBrainsProd
     // from upstream:
     //productLayout.pluginLayouts = CommunityRepositoryModules.COMMUNITY_REPOSITORY_PLUGINS + persistentListOf(
     //  JavaPluginLayout.javaPlugin(),
-    //  CommunityRepositoryModules.androidPlugin(allPlatforms = true),
     //  CommunityRepositoryModules.groovyPlugin(),
+    //  *CommunityRepositoryModules.androidPlugin(),
     //)
 
     productLayout.skipUnresolvedContentModules = true
@@ -129,11 +130,10 @@ open class RebasedProperties(private val communityHomeDir: Path) : JetBrainsProd
   }
 
   override val baseFileName: String
-    get() = "idea"
+    get() = "rebased"
 
   override fun getProductContentDescriptor(): ProductModulesContentSpec = productModules {
     include(intellijCommunityBaseFragment(platformPrefix))
-    include(communityExtensionsFragment())
   }
 
   override suspend fun copyAdditionalFiles(targetDir: Path, context: BuildContext) {
@@ -152,11 +152,11 @@ open class RebasedProperties(private val communityHomeDir: Path) : JetBrainsProd
 
   protected open suspend fun bundleExternalPlugins(context: BuildContext, targetDirectory: Path) {}
 
-  override fun createWindowsCustomizer(projectHome: Path): WindowsDistributionCustomizer = communityWindowsCustomizer(communityHomeDir)
+  override fun createWindowsCustomizer(projectHome: Path): WindowsDistributionCustomizer = ideaCommunityWindowsCustomizer(communityHomeDir)
 
-  override fun createLinuxCustomizer(projectHome: String): LinuxDistributionCustomizer = communityLinuxCustomizer(communityHomeDir)
+  override fun createLinuxCustomizer(projectHome: Path): LinuxDistributionCustomizer = ideaCommunityLinuxCustomizer(communityHomeDir)
 
-  override fun createMacCustomizer(projectHome: Path): MacDistributionCustomizer = communityMacCustomizer(communityHomeDir)
+  override fun createMacCustomizer(projectHome: Path): MacDistributionCustomizer = ideaCommunityMacCustomizer(communityHomeDir)
 
   override fun getSystemSelector(appInfo: ApplicationInfoProperties, buildNumber: String): String {
     return "IdeaIC${appInfo.majorVersion}.${appInfo.minorVersionMainPart}"
@@ -176,8 +176,8 @@ open class AndroidStudioProperties(communityHomeDir: Path) : RebasedProperties(c
     productLayout.productImplementationModules += "intellij.idea.android.customization"
 
     val defaultBundledPlugins = IDEA_BUNDLED_PLUGINS
-      .remove("intellij.mcpserver")
-      .remove("intellij.featuresTrainer")
+      .removing("intellij.mcpserver")
+      .removing("intellij.featuresTrainer")
 
     productLayout.bundledPluginModules = defaultBundledPlugins + persistentListOf(
       "intellij.android.compose-ide-plugin",
@@ -202,10 +202,14 @@ fun intellijCommunityBaseFragment(platformPrefix: String? = null): ProductModule
     alias("com.intellij.modules.androidstudio")
   }
 
+  // from upstream:
+  //if (platformPrefix != "AndroidStudio") {
+  //  alias("com.intellij.platform.ide.provisioner")
+  //}
+  //
+  //include(CommunityProductFragments.javaIdeBaseFragment())
   deprecatedInclude("intellij.platform.resources", "META-INF/PlatformLangPlugin.xml")
   deprecatedInclude("intellij.idea.community.customization", "META-INF/tips-intellij-idea-community.xml")
-
-  moduleSet(CommunityModuleSets.debuggerStreams())
 
   // from upstream:
   //module("intellij.platform.coverage")
@@ -232,10 +236,50 @@ fun intellijCommunityBaseFragment(platformPrefix: String? = null): ProductModule
   deprecatedInclude("intellij.idea.community.customization", "META-INF/community-customization.xml")
 }
 
-/**
- * Community extensions fragment for Ultimate builds.
- * This fragment is composable - subclasses can choose to include or exclude it.
- */
-fun communityExtensionsFragment(): ProductModulesContentSpec = productModules {
-  deprecatedInclude("intellij.platform.extended.community.impl", "META-INF/community-extensions.xml", ultimateOnly = true)
+inline fun ideaCommunityWindowsCustomizer(
+  projectHome: Path,
+  configure: WindowsCustomizerBuilder.() -> Unit = {}
+): WindowsDistributionCustomizer = windowsCustomizer(projectHome) {
+  fileAssociations = emptyList()
+
+  fullName { "Rebased" }
+  installDirNameHandler { "Rebased" }
+
+  configure()
+}
+
+inline fun ideaCommunityMacCustomizer(
+  projectHome: Path,
+  configure: MacCustomizerBuilder.() -> Unit = {}
+): MacDistributionCustomizer = macCustomizer(projectHome) {
+  urlSchemes = listOf("rebased")
+  associateIpr = true
+  fileAssociations = emptyList()
+  bundleIdentifier = "io.github.detachhead.rebased"
+
+  rootDirectoryName { _, _ -> "Rebased.app" }
+
+  // Rebased bundles no Kotlin plugin / kotlinc binaries, so don't declare executable patterns for them
+  // (os_specific_distributions fails the build on patterns that match no files).
+  executableFilePatterns { base, _, _, _ ->
+    base.filterNot { it == "plugins/**/*.sh" }
+  }
+
+  configure()
+}
+
+inline fun ideaCommunityLinuxCustomizer(
+  projectHome: Path,
+  configure: LinuxCustomizerBuilder.() -> Unit = {}
+): LinuxDistributionCustomizer = linuxCustomizer(projectHome) {
+
+  rootDirectoryName { _, _ -> "idea-oss" }
+
+  // Rebased bundles no Kotlin plugin / kotlinc binaries, so don't declare executable patterns for them
+  // (os_specific_distributions fails the build on patterns that match no files).
+  executableFilePatterns { base, _, _, _, _ ->
+    base.filterNot { it == "plugins/**/*.sh" }
+  }
+
+  configure()
 }
